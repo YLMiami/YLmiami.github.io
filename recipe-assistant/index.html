@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Recipe Retrieval Assistant · Yunfei Liang</title>
-<meta name="description" content="A recipe crawler turned into retrieval-based question answering with pgvector.">
-<meta property="og:title" content="Recipe Retrieval Assistant · Yunfei Liang">
-<meta property="og:description" content="A recipe crawler turned into retrieval-based question answering with pgvector.">
+<title>Recipe Agent · Yunfei Liang</title>
+<meta name="description" content="An interactive agent that answers cooking questions from a crawled recipe collection.">
+<meta property="og:title" content="Recipe Agent · Yunfei Liang">
+<meta property="og:description" content="An interactive agent that answers cooking questions from a crawled recipe collection.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -14,49 +14,52 @@
 <header class="top"><div class="wrap wide"><a class="brand" href="../">Yunfei Liang</a><nav><a href="../#projects">Projects</a><a href="https://github.com/YLMiami">GitHub</a></nav></div></header>
 <main>
 <div class="wrap center">
-<h1>Recipe Retrieval Assistant</h1>
-<p class="sub">From a focused web crawler to grounded answers about recipes</p>
-<p class="byline">Anna Dvořáková, Srećko Krečković, Yunfei Liang · Web Information Extraction and Retrieval, University of Ljubljana, 2026</p>
-<div class="links"><a href="https://github.com/DvorakovaA/WIER_pref_crawler_C">[GitHub]</a><span>(team repository, private)</span></div>
-<p class="tldr"><b>TL;DR:</b> A crawler collects dessert recipes, each recipe is split into typed segments and embedded into Postgres with pgvector, and a local language model answers questions from the one recipe that retrieval and reranking select. Every query is also answered without retrieval, so the effect of the context is visible.</p>
+<h1>Recipe Agent</h1>
+<p class="sub">An interactive agent that answers cooking questions from a crawled recipe collection</p>
+<p class="byline">Yunfei Liang</p>
+<div class="links"><span>[GitHub: coming]</span></div>
+<p class="tldr"><b>TL;DR:</b> You type a question. A local language model decides whether to search the collection, read a recipe in full, or compare every recipe by a nutrition value, and it keeps calling tools until it can answer. The collection is about 4,000 dessert recipes in Postgres with pgvector.</p>
 </div>
 <div class="wrap"><div class="tiles">
-  <div class="tile"><div class="big">5,136</div><div class="cap">pages downloaded out of 24,530 discovered, with 491,784 links recorded between them</div></div>
-  <div class="tile"><div class="big">4,066</div><div class="cap">recipe pages kept after extraction, stored as 16,057 typed segments</div></div>
-  <div class="tile"><div class="big">384-d</div><div class="cap">sentence embeddings in pgvector, searched by cosine similarity and reranked by a cross-encoder</div></div>
+  <div class="tile"><div class="big">3 tools</div><div class="cap">search, read one recipe, and rank the whole collection by calories, fat, carbs or protein</div></div>
+  <div class="tile"><div class="big">4,066</div><div class="cap">recipes, stored as 16,057 typed segments with 384-d embeddings</div></div>
+  <div class="tile"><div class="big">Local</div><div class="cap">embeddings, reranker and the chat model all run on a laptop; the database starts with Docker Compose</div></div>
 </div></div>
 <div class="wrap">
-<h2>Pipeline</h2>
+<h2>How it works</h2>
 <div class="pipe">
-  <div class="n"><b>Preferential crawler</b><span>frontier ranked by dessert keywords, robots.txt cache, duplicate check</span></div><span class="ar">→</span>
-  <div class="n"><b>Extraction</b><span>title, summary, ingredients, instructions, nutrition</span></div><span class="ar">→</span>
-  <div class="n"><b>Postgres + pgvector</b><span>all-MiniLM-L6-v2 embeddings, in Docker</span></div><span class="ar">→</span>
-  <div class="n"><b>Retrieve and rerank</b><span>top 5 by cosine, reordered by a cross-encoder</span></div><span class="ar">→</span>
-  <div class="n"><b>Answer</b><span>Llama 3.2 through Ollama, given the full recipe</span></div>
+  <div class="n"><b>Question</b><span>typed at the prompt</span></div><span class="ar">→</span>
+  <div class="n"><b>Language model</b><span>served by Ollama, picks a tool or answers</span></div><span class="ar">⇄</span>
+  <div class="n"><b>Tools</b><span>search, read, rank; results go back to the model, up to 6 steps</span></div><span class="ar">→</span>
+  <div class="n"><b>Answer</b><span>names the recipes it used</span></div>
 </div>
+<div class="scroll"><table>
+<thead><tr><th>Tool</th><th>What it does</th><th>Backed by</th></tr></thead>
+<tbody>
+<tr><td><code>search_recipes</code></td><td>Finds recipes matching a description or ingredients</td><td>Cosine search in pgvector over typed segments, then a cross-encoder reranker</td></tr>
+<tr><td><code>get_recipe</code></td><td>Reads one recipe in full</td><td>Every segment of that page: ingredients, instructions, nutrition</td></tr>
+<tr><td><code>rank_recipes</code></td><td>Compares all recipes by a nutrition value, with an optional ingredient filter</td><td>One SQL query over the nutrition segments</td></tr>
+</tbody></table></div>
+<div class="code"><pre>you> Which chocolate recipe has the most protein?
+  · rank_recipes({"nutrient": "protein", "order": "desc", "must_contain": ["chocolate"]}) → 5 results
+  · get_recipe({"recipe_id": 2}) → Peanut Butter Chocolate Squares</pre></div>
+<p class="cap">The session format, shown with the built-in sample recipes. An illustration, not a captured run.</p>
 <h2>Design decisions</h2>
 <ul>
-<li><b>Search short segments, answer from the whole recipe.</b> Titles, summaries, ingredient lists and nutrition lines are embedded separately. All are under 1,000 characters, so nothing needs chunking. Once the best segment is found, every segment of that recipe, including the instructions, goes to the language model.</li>
-<li><b>Two-stage ranking.</b> Vector search returns five candidates and a cross-encoder that reads the query and the segment together reorders them. For "Which cake can be baked using chocolate, butter and eggs?" the two stages disagree on the top result.</li>
-<li><b>Everything local.</b> The embedding model, the reranker and the language model all run on a laptop. The database and its admin console start with one <code>docker compose up</code>.</li>
-<li><b>A no-retrieval control.</b> Each question is answered twice, with and without the retrieved recipe.</li>
+<li><b>An agent instead of a fixed pipeline.</b> The first version always retrieved one recipe and answered from it. That cannot answer "which recipe has the fewest calories?", which needs the whole collection, and it gets in the way of "how do I fix a sunken cake?", which needs none of it. With tools, the model chooses.</li>
+<li><b>Three narrow tools instead of free SQL.</b> The model never writes a query. The ranking tool takes a fixed list of nutrients and a filter, so a bad call can only return an error.</li>
+<li><b>Errors go back to the model as data.</b> A wrong id comes back as a message the model can read and correct, and the session keeps running.</li>
+<li><b>Search short segments, read the whole recipe.</b> Titles, summaries, ingredient lists and nutrition lines are embedded separately. All are under 1,000 characters, so nothing needs chunking. Search returns ids, and details must come from reading the recipe.</li>
+<li><b>A plain loop, no framework.</b> Call the model, run the tools, append the results, stop after six steps. Every step is kept in a trace the prompt can show.</li>
 </ul>
-<h2>One query, both modes</h2>
-<div class="code"><pre>Query      : Any no bake chocolate dessert recipe?
-Retrieved  : No-Bake Chocolate Delight  (similarity: 0.7926)
-
-  [INGREDIENTS]
-  prepared graham cracker crust, chopped pecans,
-  instant chocolate pudding mix, frozen whipped topping, thawed
-  [NUTRI]
-  338 Calories, 21g Fat, 37g Carbs, 3g Protein</pre></div>
-<p class="cap">From the saved demo output. With this context the model describes the retrieved recipe. Without it, the model writes out a different recipe from memory.</p>
-<h2>Where it fails</h2>
+<h2>The collection</h2>
+<p>A preferential crawler ranks its frontier by dessert keywords and respects robots.txt. It discovered 24,530 pages and downloaded 5,136. Extraction kept 4,066 recipe pages and split each into title, summary, ingredients, instructions and nutrition.</p>
+<h2>Status</h2>
 <ul>
-<li><b>Questions across many recipes.</b> "Which recipe has the fewest calories?" needs a comparison over the corpus. The system retrieves one recipe and can only describe that one.</li>
-<li><b>Questions the recipes do not answer.</b> "How do I fix a cake that sank in the middle?" is general baking knowledge. The model alone does better than the model tied to one recipe.</li>
-<li><b>No scored evaluation yet.</b> The test set is ten queries, six expected to work and four expected to fail, judged by reading the answers. A recall number over a labelled question set is the next step.</li>
+<li>The loop, the tools and the model client are covered by tests that run without a database or a model.</li>
+<li>A ten-question evaluation records which tools the agent picks, how many steps it takes and how long. It has not been run on the full collection yet, so there are no numbers here.</li>
 </ul>
+<p class="cap">The crawler, extraction and database schema come from a 2026 university course project built with two teammates, used with permission. The agent, tools and evaluation are new.</p>
 </div>
 </main>
 <footer><div class="wrap wide"><span>Yunfei Liang</span><a href="https://github.com/YLMiami">github.com/YLMiami</a></div></footer>

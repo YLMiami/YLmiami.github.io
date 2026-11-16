@@ -9,7 +9,7 @@ Plain HTML and one stylesheet, no build step. Each project is a folder with its 
 | Logical and Structural Anomaly Detection on MVTec LOCO | `loco-anomaly/` |
 | Object Placement | `object-placement/` |
 | Distribution Shift with Synthetic Language Models | `language-drift/` |
-| Recipe Retrieval Assistant | `recipe-assistant/` |
+| Recipe Agent | `recipe-assistant/` |
 | Classical Visual Tracking | `tracking/` |
 
 Files named `placeholder_*.svg` and `illustration_*.svg` are drawings that mark where exported figures go. Replace the file and update the caption in the page.
