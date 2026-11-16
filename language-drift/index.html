@@ -42,7 +42,7 @@
 <li><b>The simplest one-class model wins.</b> Against WeirdLang, bigram likelihood scores 0.997, 0.935 and 0.725 AUC at 0%, 40% and 80% drift. Negative selection scores 0.963, 0.823 and 0.617.</li>
 <li><b>Negative selection beats the supervised baseline when the foreign language is far away.</b> On WeirdLang it stays above kNN at every level (0.823 vs 0.741 at 40%), although kNN is the only one shown foreign examples.</li>
 <li><b>It struggles when the foreign language is a real one.</b> On French it starts at 0.693 where kNN starts at 0.859.</li>
-<li><b>Decay is close to linear in the drift.</b> No detector shows a cliff. Each loses a roughly constant amount of AUC per 10% step.</li>
+<li><b>Two shapes of decay.</b> Negative selection and kNN lose a roughly constant amount of AUC per 10% step. Against WeirdLang, bigram likelihood holds above 0.9 until 50% drift and then falls quickly.</li>
 </ul>
 <h2>What changed from the 2025 study</h2>
 <p>The original ran one sample per drift level through Textor's <code>negsel2</code> Java tool. I replaced the tool with a dynamic programme that counts matching detectors exactly, without generating any. On the 620 strings where both the inputs and the 2025 outputs are on file, the two agree to 7e-15.</p>
