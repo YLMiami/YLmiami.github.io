@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Distribution Shift with Synthetic Language Models · Yunfei Liang</title>
+<meta name="description" content="Three anomaly detectors measured while one synthetic language drifts toward another.">
+<meta property="og:title" content="Distribution Shift with Synthetic Language Models · Yunfei Liang">
+<meta property="og:description" content="Three anomaly detectors measured while one synthetic language drifts toward another.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap wide"><a class="brand" href="../">Yunfei Liang</a><nav><a href="../#projects">Projects</a><a href="https://github.com/YLMiami">GitHub</a></nav></div></header>
+<main>
+<div class="wrap center">
+<h1>Distribution Shift with Synthetic Language Models</h1>
+<p class="sub">How long can an anomaly detector tell two languages apart while one drifts toward the other?</p>
+<p class="byline">Yunfei Liang · extends a 2025 Natural Computing project at Radboud University with Taha Khaleel</p>
+<div class="links"><a href="https://github.com/T-Khaleel/NaCo_Project">[GitHub: 2025 project]</a><span>[Code for this version: coming]</span></div>
+<p class="tldr"><b>TL;DR:</b> I model English and a foreign language as Markov chains over 27 characters and slide the foreign one toward English in 10% steps. A 20-line bigram likelihood stays ahead of the immune-inspired negative selection algorithm until both reach chance.</p>
+</div>
+<div class="wrap"><div class="tiles">
+  <div class="tile"><div class="big">620 / 620</div><div class="cap">scores from my NumPy detector match the reference Java tool, largest difference 7e-15</div></div>
+  <div class="tile"><div class="big">0.96 → 0.52</div><div class="cap">negative selection AUC as a uniform language drifts from 0% to 100% of the way to English</div></div>
+  <div class="tile"><div class="big">0.69 vs 0.86</div><div class="cap">negative selection vs a supervised kNN on French before any drift</div></div>
+</div></div>
+<div class="wrap wide"><figure><img src="img/auc_vs_drift_sweep.png" alt="ROC AUC against drift for three detectors, for a uniform foreign language and for French" width="1640" height="760"><figcaption class="cap">Mean and standard deviation over 10 seeds. 124 training strings and 124 test strings per class, length 10. At 100% drift the two languages are the same and every detector sits at chance, as it should.</figcaption></figure></div>
+<div class="wrap">
+<h2>Setup</h2>
+<p>A language here is a transition matrix: the probability of each character given the one before it. English is estimated from running text. The foreign language is either French or "WeirdLang", where every character is equally likely. Drift is a straight line between the two matrices, so 40% drift has one meaning:</p>
+<div class="code"><pre>P_t = (1 - t) * P_foreign + t * P_english      with t = 0.4</pre></div>
+<div class="scroll"><table>
+<thead><tr><th>Detector</th><th>Sees in training</th><th>Score</th></tr></thead>
+<tbody>
+<tr><td>Negative selection, r-contiguous, n = 10, r = 3</td><td>English only</td><td>log₂ of the number of detectors that match the string</td></tr>
+<tr><td>Bigram likelihood</td><td>English only</td><td>negative log-likelihood under a bigram model of English</td></tr>
+<tr><td>kNN on character 1–3-gram TF-IDF, k = 3</td><td>English and undrifted foreign strings, with labels</td><td>share of foreign neighbours</td></tr>
+</tbody></table></div>
+<h2>Findings</h2>
+<ul>
+<li><b>The simplest one-class model wins.</b> Against WeirdLang, bigram likelihood scores 0.997, 0.935 and 0.725 AUC at 0%, 40% and 80% drift. Negative selection scores 0.963, 0.823 and 0.617.</li>
+<li><b>Negative selection beats the supervised baseline when the foreign language is far away.</b> On WeirdLang it stays above kNN at every level (0.823 vs 0.741 at 40%), although kNN is the only one shown foreign examples.</li>
+<li><b>It struggles when the foreign language is a real one.</b> On French it starts at 0.693 where kNN starts at 0.859.</li>
+<li><b>Decay is close to linear in the drift.</b> No detector shows a cliff. Each loses a roughly constant amount of AUC per 10% step.</li>
+</ul>
+<h2>What changed from the 2025 study</h2>
+<p>The original ran one sample per drift level through Textor's <code>negsel2</code> Java tool. I replaced the tool with a dynamic programme that counts matching detectors exactly, without generating any. On the 620 strings where both the inputs and the 2025 outputs are on file, the two agree to 7e-15.</p>
+<p>That made repeated runs cheap, and the repeats explain an odd result. In 2025 the French curve went 0.49, 0.61, 0.44, 0.55, 0.55 across drift levels. With ten seeds it falls smoothly from 0.69 to 0.52. The zig-zag was sampling noise from single runs of 124 strings.</p>
+<figure><img src="img/auc_vs_drift_2025.png" alt="Negative selection AUC against drift, recomputed from the 2025 score files" width="1440" height="760"><figcaption class="cap">The 2025 scores, recomputed from the original output files. They match the report: 1.00 to 0.56 for naive strings, 0.96 to 0.64 for Markov strings.</figcaption></figure>
+<figure><img src="img/auc_by_era_2025.png" alt="Negative selection AUC for English of different centuries against French" width="1300" height="620"><figcaption class="cap">Real text, trained on 19th-century English and tested against French. Older English costs almost nothing. Generation Z slang costs about five points.</figcaption></figure>
+<h2>Limits</h2>
+<ul>
+<li>The French matrix is estimated from 4,030 characters of text, the English one from 31,480. Larger corpora would sharpen both.</li>
+<li>Strings are 10 characters long. Longer strings give every detector more evidence, and the ranking may change.</li>
+<li>kNN is trained on undrifted foreign strings, so it is tested on a distribution it never saw. That is the realistic case, but it is a different question from the one the two one-class detectors answer.</li>
+</ul>
+<p class="cap">In the 2025 project I designed the drift method and wrote the naive and Markov string generators and the negative selection experiments. Taha Khaleel built the kNN baseline, the URL experiments and the ROC plots.</p>
+</div>
+</main>
+<footer><div class="wrap wide"><span>Yunfei Liang</span><a href="https://github.com/YLMiami">github.com/YLMiami</a></div></footer>
+</body>
+</html>

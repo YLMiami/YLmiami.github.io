@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yunfei Liang</title>
+<meta name="description" content="Computer vision projects: anomaly detection, object placement and distribution shift.">
+<meta property="og:title" content="Yunfei Liang">
+<meta property="og:description" content="Computer vision projects: anomaly detection, object placement and distribution shift.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap wide"><a class="brand" href="">Yunfei Liang</a><nav><a href="#projects">Projects</a><a href="https://github.com/YLMiami">GitHub</a></nav></div></header>
+<main>
+<div class="wrap wide">
+<div class="intro">
+  <span class="eyebrow">Computer vision · applied machine learning</span>
+  <h1>Yunfei Liang</h1>
+  <div class="scale" aria-hidden="true"></div>
+  <p class="sub" style="max-width:720px">I work on anomaly detection, object placement, and what happens to a model when the data moves away from what it was trained on.</p>
+  <p><a href="https://github.com/YLMiami">github.com/YLMiami</a></p>
+</div>
+<h2 id="projects">Projects</h2>
+<div class="plist">
+  <a class="proj" href="loco-anomaly/"><div><h3>Logical and Structural Anomaly Detection on MVTec LOCO</h3><p>MSc thesis. A patch memory bank finds scratches and dents, a segmenter's object queries find the missing or extra part, and one calibrated sum of the two goes to the official evaluator.</p><div class="tags"><span class="tag2">anomaly detection</span><span class="tag2">Mask2Former</span><span class="tag2">PatchCore</span><span class="tag2">foundation backbones</span></div></div><div class="fact"><b>0.912</b><span>mean image AUROC with RADIO v2.5-B at 1024 px</span></div></a>
+  <a class="proj" href="object-placement/"><div><h3>Object Placement: Where Should a Person Stand in a Scene?</h3><p>A compositing pipeline that decides where a cut-out person belongs in a street scene and how large they should be, using learned heatmaps, metric depth and scene geometry.</p><div class="tags"><span class="tag2">FOPA</span><span class="tag2">BootPlace</span><span class="tag2">Depth Pro</span><span class="tag2">harmonization</span></div></div><div class="fact"><b>2,032</b><span>person and scene pairs per full run</span></div></a>
+  <a class="proj" href="language-drift/"><div><h3>Distribution Shift with Synthetic Language Models</h3><p>Two character-level languages, one sliding toward the other in 10% steps, and three anomaly detectors measured at every step until they reach chance.</p><div class="tags"><span class="tag2">distribution shift</span><span class="tag2">negative selection</span><span class="tag2">one-class detection</span></div></div><div class="fact"><b>620 / 620</b><span>scores identical to the reference Java tool</span></div></a>
+  <a class="proj" href="recipe-assistant/"><div><h3>Recipe Retrieval Assistant</h3><p>A recipe crawler turned into a question-answering tool: pages go into Postgres with pgvector, and a command-line prompt answers from what it retrieves.</p><div class="tags"><span class="tag2">retrieval</span><span class="tag2">pgvector</span><span class="tag2">Docker</span><span class="tag2">LLM</span></div></div><div class="fact"><b>Team project</b><span>write-up in progress</span></div></a>
+  <a class="proj" href="tracking/"><div><h3>Classical Visual Tracking</h3><p>Four trackers written from scratch: optical flow, mean shift, a MOSSE-style correlation filter, and Kalman and particle filters.</p><div class="tags"><span class="tag2">tracking</span><span class="tag2">correlation filters</span><span class="tag2">Kalman filter</span></div></div><div class="fact"><b>485 → 282</b><span>tracking failures as the filter update rate rises</span></div></a>
+</div>
+</div>
+</main>
+<footer><div class="wrap wide"><span>Yunfei Liang</span><a href="https://github.com/YLMiami">github.com/YLMiami</a></div></footer>
+</body>
+</html>

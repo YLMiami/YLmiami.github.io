@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Classical Visual Tracking · Yunfei Liang</title>
+<meta name="description" content="Optical flow, mean shift, correlation filter, Kalman and particle filter trackers with parameter studies.">
+<meta property="og:title" content="Classical Visual Tracking · Yunfei Liang">
+<meta property="og:description" content="Optical flow, mean shift, correlation filter, Kalman and particle filter trackers with parameter studies.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap wide"><a class="brand" href="../">Yunfei Liang</a><nav><a href="../#projects">Projects</a><a href="https://github.com/YLMiami">GitHub</a></nav></div></header>
+<main>
+<div class="wrap center">
+<h1>Classical Visual Tracking</h1>
+<p class="sub">Optical flow, mean shift, correlation filters, and Kalman and particle filters, written from scratch</p>
+<p class="byline">Yunfei Liang · Advanced Computer Vision Methods coursework, 2026</p>
+<div class="links"><a href="https://github.com/YLMiami/Computer-Vision-Trackers-ACVM-">[GitHub]</a><span>(private for now)</span></div>
+<p class="tldr"><b>TL;DR:</b> Four small trackers, each with a parameter study. They are the baseline I use to reason about what modern trackers add.</p>
+</div>
+<div class="wrap">
+<h2>Correlation filter</h2>
+<p>A MOSSE-style tracker learns a filter in the Fourier domain whose response peaks on the target, and blends in a new filter each frame at rate α. With no update the filter goes stale. Raising α cut failures on the benchmark sequences from 485 to 282 while overlap stayed near 0.42.</p>
+<div class="scroll"><table>
+<thead><tr><th>Tracker</th><th class="num">Average overlap</th><th class="num">Total failures</th></tr></thead>
+<tbody>
+<tr><td>Static box (baseline)</td><td class="num">0.35</td><td class="num">433</td></tr>
+<tr><td>Normalised cross-correlation (baseline)</td><td class="num">0.55</td><td class="num">430</td></tr>
+<tr><td>Correlation filter, α = 0</td><td class="num">0.45</td><td class="num">485</td></tr>
+<tr><td>Correlation filter, α = 0.025</td><td class="num">0.41</td><td class="num">347</td></tr>
+<tr><td>Correlation filter, α = 0.05</td><td class="num">0.41</td><td class="num">321</td></tr>
+<tr><td>Correlation filter, α = 0.10</td><td class="num">0.42</td><td class="num">303</td></tr>
+<tr><td>Correlation filter, α = 0.15</td><td class="num">0.43</td><td class="num">298</td></tr>
+<tr class="hl"><td>Correlation filter, α = 0.20</td><td class="num">0.41</td><td class="num">282</td></tr>
+</tbody></table></div>
+<h2>Kalman filter</h2>
+<figure><img src="img/kalman_ncv_spiral.png" alt="Kalman filter estimates on a spiral trajectory for five noise settings" width="1790" height="343"><figcaption class="cap">A nearly-constant-velocity model on a spiral, for five ratios of process noise q to measurement noise r. With q large the estimate follows the measurements. With r large the filter trusts its motion model and cuts the corners of the curve.</figcaption></figure>
+<p>The same constant-velocity model then drives a particle filter with a colour-histogram appearance model, 150 particles and a Bhattacharyya likelihood.</p>
+<h2>Optical flow</h2>
+<figure><img src="img/optical_flow_param_heatmaps.png" alt="Mean flow magnitude across parameters for Lucas-Kanade and Horn-Schunck" width="1465" height="581"><figcaption class="cap">Mean flow magnitude for Lucas–Kanade over window size and smoothing, and for Horn–Schunck over the regularisation weight and iteration count. A 3-pixel window with little smoothing produces large, noisy flow. Horn–Schunck has converged by 100 iterations.</figcaption></figure>
+<h2>Mean shift</h2>
+<p>A colour-histogram tracker that climbs the similarity surface by mean shift, with sweeps over kernel size, histogram bins and the stopping threshold.</p>
+<h2>Next</h2>
+<p>Planned: run the correlation filter under controlled corruptions of the input, such as blur, noise and brightness change at increasing strength, and measure where it starts to fail.</p>
+</div>
+</main>
+<footer><div class="wrap wide"><span>Yunfei Liang</span><a href="https://github.com/YLMiami">github.com/YLMiami</a></div></footer>
+</body>
+</html>

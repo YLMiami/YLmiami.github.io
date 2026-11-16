@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Object Placement · Yunfei Liang</title>
+<meta name="description" content="A compositing pipeline that decides where a person belongs in a scene and at what scale.">
+<meta property="og:title" content="Object Placement · Yunfei Liang">
+<meta property="og:description" content="A compositing pipeline that decides where a person belongs in a scene and at what scale.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap wide"><a class="brand" href="../">Yunfei Liang</a><nav><a href="../#projects">Projects</a><a href="https://github.com/YLMiami">GitHub</a></nav></div></header>
+<main>
+<div class="wrap center">
+<h1>Object Placement: Where Should a Person Stand in a Scene?</h1>
+<p class="sub">Learned heatmaps, metric depth and scene geometry in one compositing pipeline</p>
+<p class="byline">Yunfei Liang</p>
+<div class="links"><a href="https://github.com/YLMiami/PromptDresser-Modification---Digital-Try-On-With-Diverse-Backgrounds">[GitHub]</a><span>(private for now)</span></div>
+<p class="tldr"><b>TL;DR:</b> The pipeline cuts a person out of a studio photo, decides where they belong in a street scene and how large they should be, pastes them in, and matches their lighting. Three placement methods run in the pipeline and a fourth, BootPlace, is trained and evaluated alongside it. A matched comparison between them is in progress.</p>
+</div>
+<div class="wrap"><div class="tiles">
+  <div class="tile"><div class="big">2,032</div><div class="cap">person and scene pairs per full run on Cityscapes backgrounds, for both FOPA and Depth Pro placement</div></div>
+  <div class="tile"><div class="big">3 + 1</div><div class="cap">placement methods in the pipeline (FOPA, Depth Pro, vanishing point), plus BootPlace trained on Cityscapes and evaluated separately</div></div>
+  <div class="tile"><div class="big">5</div><div class="cap">harmonization methods tried after the paste: PCT-Net, Harmonizer, exposure matching and two IC-Light variants</div></div>
+</div></div>
+<div class="wrap wide">
+<div class="ba" id="ba"><img src="img/illustration_before.svg" alt="Drawing of a street with a person pasted at the centre, far too large"><div class="after"><img src="img/illustration_after.svg" alt="The same street with the person scaled down and standing on the pavement"></div><div class="bar"></div><span class="tag l">Centre paste</span><span class="tag r">Placed and scaled</span></div>
+<input class="range" id="ba-range" type="range" min="0" max="100" value="50" aria-label="Compare before and after" style="margin-top:10px">
+<p class="cap" style="margin-top:6px">A drawing of the problem, not a result. Drag to compare a naive paste with a placement that respects scale and ground contact.</p>
+</div>
+<div class="wrap">
+<h2>Pipeline</h2>
+<div class="pipe">
+  <div class="n"><b>Cutout</b><span>background removal, cached as RGBA</span></div><span class="ar">→</span>
+  <div class="n"><b>Placement</b><span>position and scale from one of the methods below</span></div><span class="ar">→</span>
+  <div class="n"><b>Composite</b><span>alpha paste at full resolution</span></div><span class="ar">→</span>
+  <div class="n"><b>Harmonization</b><span>colour and exposure matched to the scene</span></div><span class="ar">→</span>
+  <div class="n"><b>Try-on, optional</b><span>PromptDresser redraws the garment</span></div>
+</div>
+<h2>Placement methods</h2>
+<div class="scroll"><table>
+<thead><tr><th>Method</th><th>What it uses</th><th>How scale is set</th></tr></thead>
+<tbody>
+<tr><td>FOPA</td><td>A learned heatmap of good positions for this object in this background</td><td>The background is cropped around the heatmap peak</td></tr>
+<tr><td>BootPlace, evaluated separately</td><td>A detection transformer trained on Cityscapes to predict where objects go</td><td>Predicted box</td></tr>
+<tr><td>Depth Pro</td><td>Metric depth of the ground and the estimated focal length</td><td>A 1.8 m person projected at that depth</td></tr>
+<tr><td>Vanishing point</td><td>Eye height of the person and the horizon of the scene</td><td>Background aligned so the horizon meets the eye line</td></tr>
+<tr><td>Vision-language model, in progress</td><td>An API call that returns ranked boxes as JSON with a stated scale reference</td><td>Returned box</td></tr>
+</tbody></table></div>
+<figure><img src="img/placeholder_contact_sheet.svg" alt="Placeholder layout for the method comparison sheet" width="1200" height="490"><figcaption class="cap">Placeholder drawing. The real figure shows the same person and scene pairs under every method, before harmonization.</figcaption></figure>
+<figure><img src="img/placeholder_maps.svg" alt="Placeholder layout for heatmap and depth panels" width="1200" height="330"><figcaption class="cap">Placeholder drawing. The real figure shows what each method reads from the scene.</figcaption></figure>
+<h2>Engineering</h2>
+<ul>
+<li><b>Models stay loaded.</b> FOPA, Depth Pro and PCT-Net each run as a daemon that loads once and serves requests over a pipe, instead of reloading weights for every image.</li>
+<li><b>Runs are deterministic.</b> A seeded manifest fixes which person meets which background, so a run can be split across a Slurm job array and resumed without duplicates.</li>
+<li><b>Expensive steps are cached.</b> Cutouts, depth maps and placement heatmaps are precomputed, so inference reads them from disk.</li>
+</ul>
+<h2>Where the evaluation stands</h2>
+<p>The pipeline runs end to end at scale. Which placement method is best is not settled yet. The next step is a comparison on identical person and scene pairs, scored first on placement alone and then by blinded human ratings of scale, ground contact and lighting.</p>
+<p>One observation from inspected examples, not yet a controlled result: harmonizers that predict a colour transform and apply it to the original pixels kept faces and fabric intact, while those that regenerate pixels through a low-resolution latent changed them.</p>
+<p class="cap">Built on FOPA, BOOTPLACE, Depth Pro, PCT-Net, Harmonizer, IC-Light, libcom and PromptDresser. Backgrounds from Cityscapes and people from VITON-HD were used for research runs and are not shown here.</p>
+</div>
+<script>
+(function(){var b=document.getElementById('ba'),r=document.getElementById('ba-range');r.addEventListener('input',function(){b.style.setProperty('--pos',r.value+'%');});})();
+</script>
+</main>
+<footer><div class="wrap wide"><span>Yunfei Liang</span><a href="https://github.com/YLMiami">github.com/YLMiami</a></div></footer>
+</body>
+</html>

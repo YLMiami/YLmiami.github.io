@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recipe Retrieval Assistant · Yunfei Liang</title>
+<meta name="description" content="A recipe crawler turned into retrieval-based question answering with pgvector.">
+<meta property="og:title" content="Recipe Retrieval Assistant · Yunfei Liang">
+<meta property="og:description" content="A recipe crawler turned into retrieval-based question answering with pgvector.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap wide"><a class="brand" href="../">Yunfei Liang</a><nav><a href="../#projects">Projects</a><a href="https://github.com/YLMiami">GitHub</a></nav></div></header>
+<main>
+<div class="wrap center">
+<h1>Recipe Retrieval Assistant</h1>
+<p class="sub">From a web crawler to question answering over recipes</p>
+<p class="byline">Yunfei Liang · team project</p>
+<div class="links"><a href="https://github.com/DvorakovaA/WIER_pref_crawler_C">[GitHub]</a><span>(team repository, private)</span></div>
+<p class="tldr"><b>TL;DR:</b> A crawler collects recipe pages. Their text is embedded and stored in Postgres with pgvector. A command-line prompt retrieves the closest recipes for a question and has a language model answer from them.</p>
+</div>
+<div class="wrap">
+<div class="pipe">
+  <div class="n"><b>Crawler</b><span>collects recipe pages</span></div><span class="ar">→</span>
+  <div class="n"><b>Postgres + pgvector</b><span>stores text and embeddings, runs in Docker</span></div><span class="ar">→</span>
+  <div class="n"><b>Retriever</b><span>nearest recipes for the question</span></div><span class="ar">→</span>
+  <div class="n"><b>Language model</b><span>answers from the retrieved recipes</span></div><span class="ar">→</span>
+  <div class="n"><b>Command-line prompt</b><span>interactive session</span></div>
+</div>
+<p class="note"><b>Write-up in progress.</b> A recorded session, the retrieval design and a small recall test set will be added here.</p>
+</div>
+</main>
+<footer><div class="wrap wide"><span>Yunfei Liang</span><a href="https://github.com/YLMiami">github.com/YLMiami</a></div></footer>
+</body>
+</html>

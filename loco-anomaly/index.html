@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logical and Structural Anomaly Detection on MVTec LOCO · Yunfei Liang</title>
+<meta name="description" content="A fused patch-memory and object-query pipeline for logical and structural anomalies.">
+<meta property="og:title" content="Logical and Structural Anomaly Detection on MVTec LOCO · Yunfei Liang">
+<meta property="og:description" content="A fused patch-memory and object-query pipeline for logical and structural anomalies.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap wide"><a class="brand" href="../">Yunfei Liang</a><nav><a href="../#projects">Projects</a><a href="https://github.com/YLMiami">GitHub</a></nav></div></header>
+<main>
+<div class="wrap center">
+<h1>Logical and Structural Anomaly Detection on MVTec LOCO</h1>
+<p class="sub">Fusing a patch memory bank with object queries from a segmentation transformer</p>
+<p class="byline">Yunfei Liang · MSc thesis</p>
+<div class="links"><a href="https://github.com/YLMiami/Industrial-Anomaly-Detection-Using-Detection-Transformers">[GitHub]</a><span>(private for now)</span></div>
+<p class="tldr"><b>TL;DR:</b> A scratch is a local defect. A missing screw is a logical one. I use a patch memory bank for the first, a segmenter's object queries matched against the nearest normal image for the second, and add the two maps on a shared scale.</p>
+</div>
+<div class="wrap"><div class="tiles">
+  <div class="tile"><div class="big">0.912</div><div class="cap">mean image AUROC over logical and structural anomalies, RADIO v2.5-B at 1024 px. WideResNet-50 reaches 0.862.</div></div>
+  <div class="tile"><div class="big">0.946</div><div class="cap">mean segmentation mIoU of the Mask2Former-style segmenter over the five categories</div></div>
+  <div class="tile"><div class="big">0.69 → 0.76</div><div class="cap">structural sPRO when the plain FPN pixel decoder is replaced by deformable attention</div></div>
+</div></div>
+<div class="wrap wide"><figure><img src="img/placeholder_hero_grid.svg" alt="Placeholder layout for the qualitative results grid" width="1240" height="810"><figcaption class="cap">Placeholder drawing. The real figure shows one test image per category with the ground truth and the structural, logical and fused anomaly maps.</figcaption></figure></div>
+<div class="wrap">
+<h2>Method</h2>
+<div class="pipe">
+  <div class="n"><b>Frozen backbone</b><span>1536-d features on a 64×64 grid</span></div><span class="ar">→</span>
+  <div class="n"><b>Structural branch</b><span>patch memory bank, nearest-neighbour distance</span></div>
+  <div class="n"><b>Logical branch</b><span>one object per class, matched to the nearest normal image</span></div><span class="ar">→</span>
+  <div class="n"><b>Fusion</b><span>each map divided by its 99.5th percentile on normal images, summed, smoothed</span></div><span class="ar">→</span>
+  <div class="n"><b>Official evaluator</b><span>image AUROC and sPRO</span></div>
+</div>
+<ul>
+<li><b>Structural branch.</b> PatchCore-style. Features from two backbone stages are concatenated and pooled over 3×3 neighbourhoods. A test patch is scored by its distance to the nearest patch seen on normal images.</li>
+<li><b>Logical branch.</b> A Mask2Former-style segmenter turns the image into one object per class, each with a mask, an area and a pooled embedding. Each object is compared with the same class in the most similar normal training image. A class present on one side only is painted at full strength.</li>
+<li><b>Fusion.</b> The two maps have different units. Each is divided by its own 99.5th-percentile score on held-out normal images, then they are added and smoothed once.</li>
+</ul>
+<h2>Results</h2>
+<div class="chart"><div class="ct">Input resolution matters more than the choice of backbone</div><div class="cs">Mean image AUROC over logical and structural anomalies, fused pipeline, frozen feature extractor swapped</div><div class="row"><span class="lab">RADIO v2.5-B, 1024 px</span><div class="track"><div class="rule"></div><div class="dot on" style="left:90.0%"></div></div><span class="val">0.912</span></div><div class="row"><span class="lab">RADIO v2.5-B</span><div class="track"><div class="rule"></div><div class="dot on" style="left:53.8%"></div></div><span class="val">0.883</span></div><div class="row"><span class="lab">ResNet-50</span><div class="track"><div class="rule"></div><div class="dot" style="left:38.8%"></div></div><span class="val">0.871</span></div><div class="row"><span class="lab">DINOv3 ConvNeXt</span><div class="track"><div class="rule"></div><div class="dot" style="left:32.5%"></div></div><span class="val">0.866</span></div><div class="row"><span class="lab">WideResNet-50</span><div class="track"><div class="rule"></div><div class="dot on" style="left:27.5%"></div></div><span class="val">0.862</span></div><div class="row"><span class="lab">EfficientNet-B4</span><div class="track"><div class="rule"></div><div class="dot" style="left:26.2%"></div></div><span class="val">0.861</span></div><div class="row"><span class="lab">ConvNeXt-B</span><div class="track"><div class="rule"></div><div class="dot" style="left:23.8%"></div></div><span class="val">0.859</span></div><div class="axis"><div></div><div><span>0.84</span><span>0.86</span><span>0.88</span><span>0.90</span><span>0.92</span></div><div></div></div></div>
+<ul>
+<li>Swapping the feature extractor needs no retraining, because both branches only read frozen features.</li>
+<li>Adding a stride-32 stage to WideResNet-50 lowers the score to 0.804. The coarse features dilute the patch descriptor.</li>
+<li>The amount of smoothing changes image-level AUROC by about 0.002. It matters for localisation, measured by sPRO.</li>
+</ul>
+<figure><img src="img/placeholder_decomposition.svg" alt="Placeholder layout for the per-component decomposition" width="900" height="470"><figcaption class="cap">Placeholder drawing. The real figure breaks one anomaly down by component: the test object, the normal object it was matched to, and the cost.</figcaption></figure>
+<h2>What it cannot do</h2>
+<p>With one object per class, the logical branch cannot count. Two screws and three screws look the same to it. An instance-level variant that splits each class into connected components fixes this only when the instances do not touch, and in the categories where counting matters they often do.</p>
+<p class="cap">Dataset: MVTec LOCO AD (Bergmann et al., IJCV 2022). Builds on PatchCore (Roth et al., CVPR 2022) and Mask2Former (Cheng et al., CVPR 2022).</p>
+</div>
+</main>
+<footer><div class="wrap wide"><span>Yunfei Liang</span><a href="https://github.com/YLMiami">github.com/YLMiami</a></div></footer>
+</body>
+</html>
