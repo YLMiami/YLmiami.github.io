@@ -15,20 +15,48 @@
 <main>
 <div class="wrap center">
 <h1>Recipe Retrieval Assistant</h1>
-<p class="sub">From a web crawler to question answering over recipes</p>
-<p class="byline">Yunfei Liang · team project</p>
+<p class="sub">From a focused web crawler to grounded answers about recipes</p>
+<p class="byline">Anna Dvořáková, Srećko Krečković, Yunfei Liang · Web Information Extraction and Retrieval, University of Ljubljana, 2026</p>
 <div class="links"><a href="https://github.com/DvorakovaA/WIER_pref_crawler_C">[GitHub]</a><span>(team repository, private)</span></div>
-<p class="tldr"><b>TL;DR:</b> A crawler collects recipe pages. Their text is embedded and stored in Postgres with pgvector. A command-line prompt retrieves the closest recipes for a question and has a language model answer from them.</p>
+<p class="tldr"><b>TL;DR:</b> A crawler collects dessert recipes, each recipe is split into typed segments and embedded into Postgres with pgvector, and a local language model answers questions from the one recipe that retrieval and reranking select. Every query is also answered without retrieval, so the effect of the context is visible.</p>
 </div>
+<div class="wrap"><div class="tiles">
+  <div class="tile"><div class="big">5,136</div><div class="cap">pages downloaded out of 24,530 discovered, with 491,784 links recorded between them</div></div>
+  <div class="tile"><div class="big">4,066</div><div class="cap">recipe pages kept after extraction, stored as 16,057 typed segments</div></div>
+  <div class="tile"><div class="big">384-d</div><div class="cap">sentence embeddings in pgvector, searched by cosine similarity and reranked by a cross-encoder</div></div>
+</div></div>
 <div class="wrap">
+<h2>Pipeline</h2>
 <div class="pipe">
-  <div class="n"><b>Crawler</b><span>collects recipe pages</span></div><span class="ar">→</span>
-  <div class="n"><b>Postgres + pgvector</b><span>stores text and embeddings, runs in Docker</span></div><span class="ar">→</span>
-  <div class="n"><b>Retriever</b><span>nearest recipes for the question</span></div><span class="ar">→</span>
-  <div class="n"><b>Language model</b><span>answers from the retrieved recipes</span></div><span class="ar">→</span>
-  <div class="n"><b>Command-line prompt</b><span>interactive session</span></div>
+  <div class="n"><b>Preferential crawler</b><span>frontier ranked by dessert keywords, robots.txt cache, duplicate check</span></div><span class="ar">→</span>
+  <div class="n"><b>Extraction</b><span>title, summary, ingredients, instructions, nutrition</span></div><span class="ar">→</span>
+  <div class="n"><b>Postgres + pgvector</b><span>all-MiniLM-L6-v2 embeddings, in Docker</span></div><span class="ar">→</span>
+  <div class="n"><b>Retrieve and rerank</b><span>top 5 by cosine, reordered by a cross-encoder</span></div><span class="ar">→</span>
+  <div class="n"><b>Answer</b><span>Llama 3.2 through Ollama, given the full recipe</span></div>
 </div>
-<p class="note"><b>Write-up in progress.</b> A recorded session, the retrieval design and a small recall test set will be added here.</p>
+<h2>Design decisions</h2>
+<ul>
+<li><b>Search short segments, answer from the whole recipe.</b> Titles, summaries, ingredient lists and nutrition lines are embedded separately. All are under 1,000 characters, so nothing needs chunking. Once the best segment is found, every segment of that recipe, including the instructions, goes to the language model.</li>
+<li><b>Two-stage ranking.</b> Vector search returns five candidates and a cross-encoder that reads the query and the segment together reorders them. For "Which cake can be baked using chocolate, butter and eggs?" the two stages disagree on the top result.</li>
+<li><b>Everything local.</b> The embedding model, the reranker and the language model all run on a laptop. The database and its admin console start with one <code>docker compose up</code>.</li>
+<li><b>A no-retrieval control.</b> Each question is answered twice, with and without the retrieved recipe.</li>
+</ul>
+<h2>One query, both modes</h2>
+<div class="code"><pre>Query      : Any no bake chocolate dessert recipe?
+Retrieved  : No-Bake Chocolate Delight  (similarity: 0.7926)
+
+  [INGREDIENTS]
+  prepared graham cracker crust, chopped pecans,
+  instant chocolate pudding mix, frozen whipped topping, thawed
+  [NUTRI]
+  338 Calories, 21g Fat, 37g Carbs, 3g Protein</pre></div>
+<p class="cap">From the saved demo output. With this context the model describes the retrieved recipe. Without it, the model writes out a different recipe from memory.</p>
+<h2>Where it fails</h2>
+<ul>
+<li><b>Questions across many recipes.</b> "Which recipe has the fewest calories?" needs a comparison over the corpus. The system retrieves one recipe and can only describe that one.</li>
+<li><b>Questions the recipes do not answer.</b> "How do I fix a cake that sank in the middle?" is general baking knowledge. The model alone does better than the model tied to one recipe.</li>
+<li><b>No scored evaluation yet.</b> The test set is ten queries, six expected to work and four expected to fail, judged by reading the answers. A recall number over a labelled question set is the next step.</li>
+</ul>
 </div>
 </main>
 <footer><div class="wrap wide"><span>Yunfei Liang</span><a href="https://github.com/YLMiami">github.com/YLMiami</a></div></footer>
